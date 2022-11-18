@@ -41,12 +41,12 @@
     "overview": "Panoramica",
     "details": "Particolari",
     "profile": "Profilo",
-    "about": "Di",
+    "about": "Informazioni",
     "settings": "Impostazioni",
     "administration": "Amministrazione",
     "save": "Salva",
     "back": "Indietro",
-    "edit": "Modificare",
+    "edit": "Modifica",
     "archive": "Archivio",
     "delete": "Elimina",
     "restore": "Ripristina",
@@ -65,9 +65,9 @@
     "saving": "Salvataggio ..."
   },
   "tracktime": {
-    "no_time": "Nessun tempo ancora tracciato.",
-    "task_placeholder": "Inserisci o cerca l'attività...",
-    "working_time": "Orario di lavoro",
+    "no_time": "Nessun compito ancora tracciato.",
+    "task_placeholder": "Inserisci o cerca il compito...",
+    "working_time": "Ore di lavoro",
     "time_tracked": "Tempo tracciato:",
     "month_drag_help_text": "Puoi trascinare i progetti su una data per tenere traccia del tempo",
     "today": "Oggi",
@@ -80,8 +80,8 @@
     "all_projects": "Tutti i progetti",
     "total_time_tracked": "Tempo totale monitorato:",
     "top_tasks": "Compiti principali",
-    "three_month_history": "Storia di 3 mesi",
-    "details_button": "Particolari",
+    "three_month_history": "Storico di 3 mesi",
+    "details_button": "Dettaglio",
     "project_information": "Informazioni di progetto",
     "team": "Squadra",
     "total_time": "Tempo totale:",
@@ -110,8 +110,8 @@
     "my_project_placeholder": "Il mio progetto",
     "not_billable": "Non fatturabile",
     "billing_budget": "Fatturazione e budget",
-    "default_task": "Attività predefinita",
-    "default_task_help": "Questo valore verrà utilizzato come attività predefinita durante il monitoraggio del tempo su questo progetto."
+    "default_task": "Compito predefinito",
+    "default_task_help": "Questo valore verrà utilizzato come compito predefinito durante il monitoraggio del tempo su questo progetto."
   },
   "settings": {
     "user_profile": "Profilo utente",
@@ -123,8 +123,8 @@
     "it": "Italiano",
     "user_interface": "Interfaccia utente",
     "theme": "Tema",
-    "auto_detect": "Trovato automaticamente",
-    "light_theme": "Luce",
+    "auto_detect": "Automatico",
+    "light_theme": "Chiaro",
     "dark_theme": "Scuro",
     "time_tracking": "Tracciamento del tempo",
     "track_time_view": "Visualizzazione predefinita del tempo della traccia",
@@ -137,7 +137,7 @@
     "enable_wekan_integration": "Abilitare l'integrazione con Wekan?",
     "siwapp_url": "URL Siwapp",
     "siwapp_api_token": "Token API Siwapp",
-    "titra_changelog": "registro delle modifiche dei titoli",
+    "titra_changelog": "Changelog",
     "titra_changelog_error": "Impossibile recuperare il log delle modifiche da Github.",
     "daily_start_time": "Inizio giornaliero dell'orario di lavoro",
     "break_start_time": "Tempo di pausa giornaliero",
@@ -178,7 +178,7 @@
     "holiday_region": "Regione Vacanze",
     "xframe_options_origin": "URL di origine dell'intestazione X-Frame-Options",
     "project_search_num_results": "Numero di progetti visualizzati nella ricerca dei progetti (predefinito 5)",
-    "task_search_num_results": "Numero di attività visualizzate nella ricerca attività (predefinito 5)",
+    "task_search_num_results": "Numero di compiti visualizzati nella ricerca compiti (predefinito 5)",
     "categories": {
       "global": "globali",
       "interfaces": "Interfacce",
@@ -200,12 +200,12 @@
   },
   "limit": {
     "entries": "inserimenti",
-    "show": "Mostrare",
+    "show": "Mostra",
     "all": "Tutto"
   },
   "period": {
     "time_period": "Periodo di tempo",
-    "currentMonth": "Corrente mese",
+    "currentMonth": "Mese corrente",
     "currentWeek": "Settimana corrente",
     "currentYear": "Anno corrente",
     "lastMonth": "Lo scorso mese",
@@ -213,7 +213,7 @@
     "lastWeek": "La settimana scorsa",
     "lastYear": "L'anno scorso",
     "all": "Sempre",
-    "custom": "Costume",
+    "custom": "Personalizzato",
     "custom_period": "Periodo di tempo personalizzato"
   },
   "resource": {
@@ -221,20 +221,20 @@
     "all": "Tutte le risorse"
   },
   "task": {
-    "searching": "Ricerca di attività...",
-    "storedTasks": "Attività memorizzate",
+    "searching": "Ricerca compiti...",
+    "storedTasks": "Compiti memorizzati",
     "search": "Cerca compiti",
-    "lastUsed": "Ultimo uso",
+    "lastUsed": "Ultimo utilizzato",
     "startDate": "Inizio programmato",
     "endDate": "Finale previsto",
     "duration": "Durata",
     "dependencies": "Dipendenze",
     "newTask": "Nuovo compito",
-    "editTask": "Modifica attività"
+    "editTask": "Modifica compito"
   },
   "details": {
     "filter": "Filtro",
-    "detailed": "Dettagliato",
+    "detailed": "Dettaglio",
     "daily": "Quotidiano",
     "total": "Totale",
     "search": "Ricerca:",
@@ -258,7 +258,7 @@
     "copy_instructions": "Copia e incolla il link sopra per condividere le informazioni del tuo progetto con qualcuno.",
     "security_notice": "Questa dashboard è accessibile a tutti sul Web tramite questo collegamento.",
     "time_per_date": "Tempo per data",
-    "time_distribution_task": "Distribuzione del tempo per attività",
+    "time_distribution_task": "Distribuzione del tempo per compito",
     "detailed_working_time": "Orario di lavoro dettagliato"
   },
   "tabular": {
@@ -274,9 +274,9 @@
     "sSearch": "Ricerca:",
     "sZeroRecords": "nessuna corrispondenza trovata",
     "oPaginate": {
-      "sFirst": "Primo",
-      "sLast": "Scorso",
-      "sNext": "Prossimo",
+      "sFirst": "Prima",
+      "sLast": "Ultima",
+      "sNext": "Successiva",
       "sPrevious": "Precedente"
     },
     "oAria": {
@@ -300,7 +300,7 @@
     "project_restore_success": "Progetto restaurato",
     "settings_saved_success": "Impostazioni salvate",
     "enter_time": "Per favore inserisci il tuo tempo",
-    "enter_task": "Inserisci un'attività",
+    "enter_task": "Inserisci un compito",
     "select_project": "Seleziona un progetto.",
     "check_time_input": "Si prega di controllare l'ora inserita",
     "project_delete_confirm": "Vuoi davvero eliminare questo progetto?",
@@ -324,11 +324,11 @@
   "login": {
     "400": "Accesso fallito. Per favore riprova.",
     "403": "Accesso fallito, controlla le tue credenziali.",
-    "password": "Parola d'ordine",
+    "password": "Password",
     "forgot_password": "Hai dimenticato la password?",
     "no_account": "Non hai un account?",
     "register": "Registrati",
-    "sign_in": "Registrazione",
+    "sign_in": "Accedi",
     "sign_in_oidc": "Accedi con OpenID Connect",
     "login_or_signup": "Effettua il login o registrati per continuare.",
     "login_failed": "Impossibile accedere, controlla il tuo nome utente/password.",
