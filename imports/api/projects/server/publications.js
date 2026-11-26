@@ -176,5 +176,5 @@ Meteor.publish('projectStats', function projectStats(projectId) {
 
 Meteor.publish('publicProjectName', (_id) => {
   check(_id, String)
-  return Projects.find({ _id }, { name: 1 })
+  return Projects.find({ _id }, { fields: { name: 1 } })
 })

@@ -143,8 +143,14 @@ Meteor.publish('singleTimecard', function singleTimecard(_id) {
   check(_id, String)
   checkAuthentication(this)
   const timecard = Timecards.findOne({ _id })
-  const project = Projects.findOne({ _id: timecard.projectId })
-  if (!this.userId || (!Timecards.findOne({ userId: this.userId }) && !project.public)) {
+  if (!timecard) {
+    return this.ready()
+  }
+  const project = Projects.findOne({
+    _id: timecard.projectId,
+    $or: [{ userId: this.userId }, { public: true }, { team: this.userId }],
+  })
+  if (!this.userId || (timecard.userId !== this.userId && !project)) {
     return this.ready()
   }
   return Timecards.find({ _id })

@@ -1,6 +1,7 @@
 import { Dashboards } from './dashboards'
 import { periodToDates } from '../../utils/periodHelpers.js'
-import { checkAuthentication } from '../../utils/server_method_helpers.js'
+import Projects from '../projects/projects.js'
+import { checkAuthentication, canAccessProject } from '../../utils/server_method_helpers.js'
 import { getGlobalSetting } from '../../utils/frontend_helpers'
 
 Meteor.methods({
@@ -12,6 +13,16 @@ Meteor.methods({
     check(resourceId, String)
     check(customer, String)
     checkAuthentication(this)
+    // a dashboard link is public: it may only expose projects the creator can see
+    if (customer !== 'all') {
+      const customerProjects = Projects.find({ customer }, { fields: { _id: 1 } }).fetch()
+      if (customerProjects.length === 0
+        || customerProjects.some((project) => !canAccessProject(project._id, this.userId))) {
+        throw new Meteor.Error('notifications.auth_error_method')
+      }
+    } else if (!canAccessProject(projectId, this.userId)) {
+      throw new Meteor.Error('notifications.auth_error_method')
+    }
     const { startDate, endDate } = periodToDates(timePeriod)
     const meteorUser = Meteor.users.findOne({ _id: this.userId })
     let timeunit = getGlobalSetting('timeunit')

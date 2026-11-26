@@ -5,7 +5,7 @@ import { check, Match } from 'meteor/check'
 import Timecards from '../timecards/timecards'
 import Projects from './projects.js'
 import Tasks from '../tasks/tasks.js'
-import { checkAuthentication } from '../../utils/server_method_helpers.js'
+import { checkAuthentication, canAccessProject, canAdministerProject } from '../../utils/server_method_helpers.js'
 import { addNotification } from '../notifications/notifications.js'
 import { emojify } from '../../utils/frontend_helpers'
 
@@ -112,8 +112,9 @@ Meteor.methods({
   deleteProject({ projectId }) {
     check(projectId, String)
     checkAuthentication(this)
+    // only the owner may delete a project (public projects included)
     Projects.remove({
-      $or: [{ userId: this.userId }, { public: true }],
+      userId: this.userId,
       _id: projectId,
     })
     return true
@@ -163,6 +164,9 @@ Meteor.methods({
       const projectList = Projects.find({ $and: andCondition }, { _id: 1 })
         .fetch().map((value) => value._id)
       return rawCollection.aggregate([{ $match: { projectId: { $in: projectList } } }, { $group: { _id: '$task', count: { $sum: '$hours' } } }, { $sort: { count: -1 } }, { $limit: 3 }]).toArray()
+    }
+    if (!canAccessProject(projectId, this.userId)) {
+      throw new Meteor.Error('notifications.auth_error_method')
     }
     return rawCollection.aggregate([{ $match: { projectId } }, { $group: { _id: '$task', count: { $sum: '$hours' } } }, { $sort: { count: -1 } }, { $limit: 3 }]).toArray()
   },
@@ -220,14 +224,21 @@ Meteor.methods({
     check(projectId, String)
     check(priority, Number)
     checkAuthentication(this)
-    Projects.update({ _id: projectId }, { $set: { priority } })
+    // priority is stored on the project: only its owner or admins may change it
+    Projects.update({
+      _id: projectId,
+      $or: [{ userId: this.userId }, { admins: this.userId }],
+    }, { $set: { priority } })
     return 'notifications.project_priority_success'
   },
   setDefaultTaskForProject({ projectId, taskId }) {
     check(projectId, String)
     check(taskId, String)
     checkAuthentication(this)
-    const task = Tasks.findOne({ _id: taskId })
+    const task = Tasks.findOne({ _id: taskId, projectId })
+    if (!task || !canAdministerProject(projectId, this.userId)) {
+      throw new Meteor.Error('notifications.auth_error_method')
+    }
     if (task.isDefaultTask) {
       Projects.update({ _id: projectId }, { $unset: { defaultTask: 1 } })
       Tasks.update({ _id: taskId }, { $set: { isDefaultTask: false } })

@@ -99,8 +99,9 @@ Meteor.methods({
     check(name, String)
     check(theme, String)
     check(language, String)
-    check(avatar, Match.Maybe(String))
-    check(avatarColor, Match.Maybe(String))
+    // the avatar is rendered as <img src> for other users: only image data URLs are allowed
+    check(avatar, Match.Maybe(Match.Where((value) => value === '' || /^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(value))))
+    check(avatarColor, Match.Maybe(Match.Where((value) => value === '' || /^#[0-9a-fA-F]{3,8}$/.test(value))))
     if (!avatar) {
       Meteor.users.update({ _id: this.userId }, { $unset: { 'profile.avatar': '' } })
     }

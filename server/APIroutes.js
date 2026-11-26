@@ -88,7 +88,19 @@ WebApp.connectHandlers.use('/timeentry/create/', async (req, res, next) => {
       sendResponse(res, 500, `Invalid parameters received.${error}`)
       return
     }
-    const timecardId = insertTimeCard(json.projectId, json.task, new Date(json.date), json.hours, meteorUser._id)
+    let timecardId
+    try {
+      timecardId = insertTimeCard(
+        json.projectId,
+        json.task,
+        new Date(json.date),
+        json.hours,
+        meteorUser._id,
+      )
+    } catch (error) {
+      sendResponse(res, 403, 'Project not found or not accessible.')
+      return
+    }
     const payload = {}
     payload.timecardId = timecardId
     sendResponse(res, 200, 'Time entry created.', payload)
@@ -204,8 +216,19 @@ WebApp.connectHandlers.use('/project/create/', async (req, res, next) => {
       sendResponse(res, 500, `Invalid parameters received.${error}`)
       return
     }
-    json.userId = meteorUser._id
-    const projectId = Projects.insert(json)
+    const newProject = {
+      name: json.name,
+      description: json.description,
+      color: json.color,
+      customer: json.customer,
+      rate: json.rate,
+      budget: json.budget,
+      userId: meteorUser._id,
+    }
+    Object.keys(newProject).forEach((key) => {
+      if (newProject[key] === undefined) delete newProject[key]
+    })
+    const projectId = Projects.insert(newProject)
     const payload = {}
     payload.projectId = projectId
     sendResponse(res, 200, 'Project created.', payload)

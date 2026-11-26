@@ -2,7 +2,11 @@ import { Match } from 'meteor/check'
 import Timecards from '../../timecards/timecards.js'
 import Projects from '../../projects/projects.js'
 import { Dashboards } from '../../dashboards/dashboards'
-import { checkAuthentication, checkAdminAuthentication } from '../../../utils/server_method_helpers.js'
+import { checkAuthentication, checkAdminAuthentication, canAccessProject } from '../../../utils/server_method_helpers.js'
+
+// only these profile fields of other users may be sent to the client:
+// the profile also holds API tokens (APItoken, siwapptoken, zammadtoken)
+const safeFields = { 'profile.name': 1, 'profile.avatar': 1, 'profile.avatarColor': 1 }
 
 Meteor.publish('projectUsers', function projectUsers({ projectId }) {
   check(projectId, String)
@@ -27,7 +31,7 @@ Meteor.publish('projectUsers', function projectUsers({ projectId }) {
         if (!initializing) {
           userIds.push(Timecards.findOne(_id).userId)
           uniqueUsers = [...new Set(userIds)]
-          this.added('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { profile: 1 }).fetch() })
+          this.added('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { fields: safeFields }).fetch() })
         }
       },
       removed: () => {
@@ -36,12 +40,15 @@ Meteor.publish('projectUsers', function projectUsers({ projectId }) {
           Timecards.find({ projectId: { $in: projectList } }).forEach((timecard) => {
             userIds.push(timecard.userId)
           })
-          this.changed('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { profile: 1 }).fetch() })
+          this.changed('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { fields: safeFields }).fetch() })
         }
       },
       // don't care about changed
     })
   } else {
+    if (!canAccessProject(projectId, this.userId)) {
+      return this.ready()
+    }
     Timecards.find({ projectId }).forEach((timecard) => {
       userIds.push(timecard.userId)
     })
@@ -50,7 +57,7 @@ Meteor.publish('projectUsers', function projectUsers({ projectId }) {
         if (!initializing) {
           userIds.push(Timecards.findOne(_id).userId)
           uniqueUsers = [...new Set(userIds)]
-          this.added('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { profile: 1 }).fetch() })
+          this.added('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { fields: safeFields }).fetch() })
         }
       },
       removed: () => {
@@ -60,14 +67,14 @@ Meteor.publish('projectUsers', function projectUsers({ projectId }) {
             userIds.push(timecard.userId)
           })
           uniqueUsers = [...new Set(userIds)]
-          this.changed('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { profile: 1 }).fetch() })
+          this.changed('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { fields: safeFields }).fetch() })
         }
       },
     })
   }
   uniqueUsers = [...new Set(userIds)]
   initializing = false
-  this.added('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { profile: 1 }).fetch() })
+  this.added('projectUsers', projectId, { users: Meteor.users.find({ _id: { $in: uniqueUsers }, inactive: { $ne: true } }, { fields: safeFields }).fetch() })
   this.ready()
   this.onStop(() => {
     handle.stop()
@@ -136,7 +143,7 @@ Meteor.publish('projectResources', function projectResources({ projectId }) {
           if (!userIds.includes(newUserId)) {
             userIds.push(newUserId)
             const meteorUser = Meteor.users
-              .findOne({ _id: newUserId, inactive: { $ne: true } }, { profile: 1 })?.profile
+              .findOne({ _id: newUserId, inactive: { $ne: true } }, { fields: safeFields })?.profile
             if (meteorUser) {
               this.added('projectResources', newUserId, meteorUser)
             }
@@ -152,7 +159,7 @@ Meteor.publish('projectResources', function projectResources({ projectId }) {
           uniqueUsers = [...new Set(userIds)]
           for (const userId of uniqueUsers) {
             const meteorUser = Meteor.users
-              .findOne({ _id: userId, inactive: { $ne: true } }, { profile: 1 })?.profile
+              .findOne({ _id: userId, inactive: { $ne: true } }, { fields: safeFields })?.profile
             if (meteorUser) {
               this.changed('projectResources', userId, meteorUser)
             }
@@ -162,8 +169,12 @@ Meteor.publish('projectResources', function projectResources({ projectId }) {
       // don't care about changed
     })
   } else {
-    let selector = { projectId }
-    if (projectId instanceof Array) { selector = { projectId: { $in: projectId } } }
+    const requestedProjects = projectId instanceof Array ? projectId : [projectId]
+    const accessibleProjects = Projects.find({
+      _id: { $in: requestedProjects },
+      $or: [{ userId: this.userId }, { public: true }, { team: this.userId }],
+    }, { fields: { _id: 1 } }).fetch().map((value) => value._id)
+    const selector = { projectId: { $in: accessibleProjects } }
     Timecards.find(selector).forEach((timecard) => {
       userIds.push(timecard.userId)
     })
@@ -172,7 +183,7 @@ Meteor.publish('projectResources', function projectResources({ projectId }) {
         const newUserId = Timecards.findOne(_id).userId
         if (!userIds.includes(newUserId)) {
           const meteorUser = Meteor.users
-            .findOne({ _id: newUserId, inactive: { $ne: true } }, { profile: 1 })?.profile
+            .findOne({ _id: newUserId, inactive: { $ne: true } }, { fields: safeFields })?.profile
           if (meteorUser) {
             userIds.push(newUserId)
             this.added('projectResources', newUserId)
@@ -188,7 +199,7 @@ Meteor.publish('projectResources', function projectResources({ projectId }) {
           uniqueUsers = [...new Set(userIds)]
           uniqueUsers.forEach((userId) => {
             const meteorUser = Meteor.users
-              .findOne({ _id: userId, inactive: { $ne: true } }, { profile: 1 })?.profile
+              .findOne({ _id: userId, inactive: { $ne: true } }, { fields: safeFields })?.profile
             if (meteorUser) {
               this.changed('projectResources', userId, meteorUser)
             }
@@ -201,7 +212,7 @@ Meteor.publish('projectResources', function projectResources({ projectId }) {
   initializing = false
   for (const userId of uniqueUsers) {
     const meteorUser = Meteor.users
-      .findOne({ _id: userId, inactive: { $ne: true } }, { profile: 1 })?.profile
+      .findOne({ _id: userId, inactive: { $ne: true } }, { fields: safeFields })?.profile
     if (meteorUser) {
       this.added('projectResources', userId, meteorUser)
     }

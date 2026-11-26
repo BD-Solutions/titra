@@ -57,7 +57,13 @@ function timeInUserUnit(time) {
 }
 function displayUserAvatar(meteorUser) {
   if (meteorUser && meteorUser.profile.avatar) {
-    return `<img src="${meteorUser.profile.avatar}" alt="${meteorUser.profile.name}" style="height:25px" class="rounded"/>`
+    // build the element through the DOM so name and avatar are escaped (rendered with {{{ }}})
+    const img = document.createElement('img')
+    img.src = meteorUser.profile.avatar
+    img.alt = meteorUser.profile.name || ''
+    img.style.height = '25px'
+    img.className = 'rounded'
+    return img.outerHTML
   }
   namedavatar.config({
     nameType: 'initials',
