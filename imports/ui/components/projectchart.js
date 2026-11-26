@@ -37,7 +37,15 @@ Template.projectchart.helpers({
   },
   avatarImg(avatar, name, avatarColor) {
     if (avatar) {
-      return `<img src="${avatar}" alt="${name}" style="height:25px; cursor:pointer;" class="rounded js-avatar-tooltip" data-bs-placement="top" title="${name}"/>`
+      const img = document.createElement('img')
+      img.src = avatar
+      img.alt = name
+      img.title = name
+      img.style.height = '25px'
+      img.style.cursor = 'pointer'
+      img.className = 'rounded js-avatar-tooltip'
+      img.dataset.bsPlacement = 'top'
+      return img.outerHTML
     }
     namedavatar.config({
       nameType: 'initials',

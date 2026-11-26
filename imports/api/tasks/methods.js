@@ -1,6 +1,14 @@
 import { ValidatedMethod } from 'meteor/mdg:validated-method'
 import Tasks from './tasks.js'
-import { checkAuthentication } from '../../utils/server_method_helpers.js'
+import { checkAuthentication, canAccessProject, checkProjectAccess } from '../../utils/server_method_helpers.js'
+
+function checkTaskAccess(taskId, userId) {
+  const task = Tasks.findOne({ _id: taskId })
+  if (!task || !(task.userId === userId
+    || (task.projectId && canAccessProject(task.projectId, userId)))) {
+    throw new Meteor.Error('notifications.auth_error_method')
+  }
+}
 
 const insertProjectTask = new ValidatedMethod({
   name: 'insertProjectTask',
@@ -17,6 +25,7 @@ const insertProjectTask = new ValidatedMethod({
     projectId, name, start, end, dependencies,
   }) {
     checkAuthentication(this)
+    checkProjectAccess(projectId, this.userId)
     Tasks.insert({
       projectId,
       name,
@@ -42,6 +51,7 @@ const updateTask = new ValidatedMethod({
     taskId, name, start, end, dependencies,
   }) {
     checkAuthentication(this)
+    checkTaskAccess(taskId, this.userId)
     const updatedTask = {
     }
     if (name) updatedTask.name = name
@@ -69,6 +79,7 @@ const removeProjectTask = new ValidatedMethod({
   },
   run({ taskId }) {
     checkAuthentication(this)
+    checkTaskAccess(taskId, this.userId)
     Tasks.remove({ _id: taskId })
   },
 })

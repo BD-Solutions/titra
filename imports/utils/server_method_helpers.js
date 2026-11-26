@@ -42,6 +42,29 @@ function checkAdminAuthentication(context) {
     throw new Meteor.Error('notifications.auth_error_method')
   }
 }
+function canAccessProject(projectId, userId) {
+  if (!projectId || !userId) {
+    return false
+  }
+  return !!Projects.findOne({
+    _id: projectId,
+    $or: [{ userId }, { public: true }, { team: userId }],
+  })
+}
+function checkProjectAccess(projectId, userId) {
+  if (!canAccessProject(projectId, userId)) {
+    throw new Meteor.Error('notifications.auth_error_method')
+  }
+}
+function canAdministerProject(projectId, userId) {
+  if (!projectId || !userId) {
+    return false
+  }
+  return !!Projects.findOne({
+    _id: projectId,
+    $or: [{ userId }, { admins: userId }],
+  })
+}
 function getProjectListByCustomer(customer) {
   let projects = []
   const userId = Meteor.userId()
@@ -459,6 +482,9 @@ function buildDetailedTimeEntriesForPeriodSelector({
 export {
   checkAuthentication,
   checkAdminAuthentication,
+  canAccessProject,
+  checkProjectAccess,
+  canAdministerProject,
   getProjectListById,
   getProjectListByCustomer,
   totalHoursForPeriodMapper,

@@ -11,6 +11,8 @@ import { emojify, getGlobalSetting } from '../../utils/frontend_helpers'
 import { timeInUserUnit } from '../../utils/periodHelpers.js'
 import {
   checkAuthentication,
+  checkProjectAccess,
+  getProjectListById,
   buildTotalHoursForPeriodSelector,
   buildDailyHoursSelector,
   buildworkingTimeSelector,
@@ -45,7 +47,23 @@ function checkTimeEntryRule({
     throw new Meteor.Error(error.message)
   }
 }
-function insertTimeCard(projectId, task, date, hours, userId, customfields) {
+// custom field values must never overwrite the core fields of a time entry
+const reservedTimecardFields = ['_id', 'userId', 'projectId', 'date', 'hours', 'task', 'state']
+function sanitizeCustomFields(customfields) {
+  if (!customfields) {
+    return {}
+  }
+  const sanitized = {}
+  for (const [key, value] of Object.entries(customfields)) {
+    if (!reservedTimecardFields.includes(key) && !key.startsWith('$') && !key.includes('.')) {
+      sanitized[key] = value
+    }
+  }
+  return sanitized
+}
+function insertTimeCard(projectId, task, date, hours, userId, unsafeCustomfields) {
+  checkProjectAccess(projectId, userId)
+  const customfields = sanitizeCustomFields(unsafeCustomfields)
   const newTimeCard = {
     userId,
     projectId,
@@ -64,6 +82,7 @@ function insertTimeCard(projectId, task, date, hours, userId, customfields) {
   return Timecards.insert(newTimeCard)
 }
 function upsertTimecard(projectId, task, date, hours, userId) {
+  checkProjectAccess(projectId, userId)
   if (!Tasks.findOne({ userId, name: task.replace(/(:\S*:)/g, emojify) })) {
     Tasks.insert({ userId, lastUsed: new Date(), name: task.replace(/(:\S*:)/g, emojify) })
   } else {
@@ -163,20 +182,25 @@ Meteor.methods({
     check(hours, Number)
     check(customfields, Match.Maybe(Object))
     checkAuthentication(this)
-    const timecard = Timecards.findOne({ _id })
+    const timecard = Timecards.findOne({ _id, userId: this.userId })
+    if (!timecard) {
+      throw new Meteor.Error('notifications.auth_error_method')
+    }
+    checkProjectAccess(projectId, this.userId)
+    const safeCustomfields = sanitizeCustomFields(customfields)
     checkTimeEntryRule({
       userId: this.userId, projectId, task, state: timecard.state, date, hours,
     })
     if (!Tasks.findOne({ userId: this.userId, name: task.replace(/(:\S*:)/g, emojify) })) {
-      Tasks.insert({ userId: this.userId, name: task.replace(/(:\S*:)/g, emojify), ...customfields })
+      Tasks.insert({ userId: this.userId, name: task.replace(/(:\S*:)/g, emojify), ...safeCustomfields })
     }
-    Timecards.update({ _id }, {
+    Timecards.update({ _id, userId: this.userId }, {
       $set: {
         projectId,
         date,
         hours,
         task: task.replace(/(:\S*:)/g, emojify),
-        ...customfields,
+        ...safeCustomfields,
       },
     })
   },
@@ -410,12 +434,18 @@ Meteor.methods({
     for (const timeEntryId of timeEntries) {
       check(timeEntryId, String)
     }
+    const accessibleProjects = getProjectListById('all')
+    const entrySelector = { $in: timeEntries }
     if (state === 'exported') {
-      Timecards.update({ _id: { $in: timeEntries }, state: { $in: ['new', undefined] } }, { $set: { state } }, { multi: true })
+      Timecards.update({ _id: entrySelector, projectId: { $in: accessibleProjects }, state: { $in: ['new', undefined] } }, { $set: { state } }, { multi: true })
     } else if (state === 'billed') {
-      Timecards.update({ _id: { $in: timeEntries }, state: { $ne: 'notBillable' } }, { $set: { state } }, { multi: true })
+      Timecards.update({ _id: entrySelector, projectId: { $in: accessibleProjects }, state: { $ne: 'notBillable' } }, { $set: { state } }, { multi: true })
     } else {
-      Timecards.update({ _id: { $in: timeEntries } }, { $set: { state } }, { multi: true })
+      Timecards.update(
+        { _id: entrySelector, projectId: { $in: accessibleProjects } },
+        { $set: { state } },
+        { multi: true },
+      )
     }
   },
 })

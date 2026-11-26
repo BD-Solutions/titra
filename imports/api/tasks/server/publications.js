@@ -1,5 +1,5 @@
 import { check } from 'meteor/check'
-import { checkAuthentication } from '../../../utils/server_method_helpers.js'
+import { checkAuthentication, canAccessProject } from '../../../utils/server_method_helpers.js'
 import Tasks from '../tasks.js'
 
 Meteor.publish('mytasks', function mytasks({ filter, projectId }) {
@@ -9,7 +9,7 @@ Meteor.publish('mytasks', function mytasks({ filter, projectId }) {
   const taskFilter = {
     $or: [{ userId: this.userId }],
   }
-  if (projectId) {
+  if (projectId && canAccessProject(projectId, this.userId)) {
     taskFilter.$or.push({ projectId })
   }
   if (filter) {
@@ -33,5 +33,8 @@ Meteor.publish('allmytasks', function mytasks({ filter, limit }) {
 Meteor.publish('projectTasks', function projectTasks({ projectId }) {
   check(projectId, String)
   checkAuthentication(this)
+  if (!canAccessProject(projectId, this.userId)) {
+    return this.ready()
+  }
   return Tasks.find({ projectId })
 })

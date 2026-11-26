@@ -10,6 +10,28 @@ Accounts.setAdditionalFindUserOnExternalLogin((user) => {
   return undefined
 })
 
+Accounts.validateLoginAttempt((attempt) => {
+  // the anonymous login handler is always registered: honour the global setting on the server
+  if (attempt.type === 'anonymous' && !getGlobalSetting('enableAnonymousLogins')) {
+    throw new Meteor.Error(403, 'Anonymous logins are disabled.')
+  }
+  return attempt.allowed
+})
+
+Meteor.startup(() => {
+  // self registration via the client 'createUser' method must honour disableUserRegistration
+  // (admins create users through the adminCreateUser method, which is not affected)
+  const createUserHandler = Meteor.server.method_handlers.createUser
+  if (createUserHandler) {
+    Meteor.server.method_handlers.createUser = function createUser(...args) {
+      if (getGlobalSetting('disableUserRegistration')) {
+        throw new Meteor.Error(403, 'User registration is disabled.')
+      }
+      return createUserHandler.apply(this, args)
+    }
+  }
+})
+
 Accounts.onCreateUser((options, user) => {
   if (options.anonymous) {
     options.profile = {
